@@ -83,6 +83,10 @@ check-docs: ## Run the script to ensure that the docs are updated
 lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
 	$(GOLANGCI_LINT) run
 
+.PHONY: lint-test
+lint-test:  ## Run golangci-lint for scaffolded project 
+	./lint-testdata.sh
+
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
