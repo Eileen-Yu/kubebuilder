@@ -30,9 +30,11 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/yaml"
 )
 
 var outputGetter ExecOutputGetter = &execOutputGetter{}
@@ -50,6 +52,12 @@ type ExecOutputGetter interface {
 }
 
 type execOutputGetter struct{}
+
+// PluginConfigHandler is an interface to update the config modified by external plugin.
+type PluginConfigHandler interface {
+	GetConfig() config.Config
+	InjectConfig(config.Config) error
+}
 
 func (e *execOutputGetter) GetExecOutput(request []byte, path string) ([]byte, error) {
 	cmd := exec.Command(path) //nolint:gosec
@@ -149,7 +157,8 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 	return universe, nil
 }
 
-func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string) error {
+// nolint:lll
+func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string, p PluginConfigHandler) error {
 	var err error
 
 	req.Universe, err = getUniverseMap(fs)
@@ -165,6 +174,22 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 	currentDir, err := currentDirGetter.GetCurrentDir()
 	if err != nil {
 		return fmt.Errorf("error getting current directory: %v", err)
+	}
+
+	// TODO: for debug only, would delete it
+	fmt.Println("This is the received config from plugin response!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", res.Config)
+
+	// update the config
+	if res.Config != "" {
+		updatedConfig := p.GetConfig()
+
+		if err := yaml.Unmarshal([]byte(res.Config), updatedConfig); err != nil {
+			return fmt.Errorf("error unmarshalling the updated config from PluginResponse: %w", err)
+		}
+
+		if err := p.InjectConfig(updatedConfig); err != nil {
+			return fmt.Errorf("error injecting the updated config from PluginResponse: %w", err)
+		}
 	}
 
 	for filename, data := range res.Universe {

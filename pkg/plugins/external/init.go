@@ -17,18 +17,23 @@ limitations under the License.
 package external
 
 import (
+	"fmt"
+
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/yaml"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
 
 type initSubcommand struct {
-	Path string
-	Args []string
+	Path   string
+	Args   []string
+	config config.Config
 }
 
 func (p *initSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -40,16 +45,33 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
+	configBytes, err := yaml.Marshal(p.config)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Scaffolding with config:", string(configBytes))
+
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "init",
 		Args:       p.Args,
+		Config:     string(configBytes),
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err = handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *initSubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+	return nil
+}
+
+func (p *initSubcommand) GetConfig() config.Config {
+	return p.config
 }

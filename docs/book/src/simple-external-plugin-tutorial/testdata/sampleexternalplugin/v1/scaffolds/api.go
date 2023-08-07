@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/yaml"
 )
 
 var ApiFlags = []external.Flag{
@@ -56,6 +57,40 @@ func ApiCmd(pr *external.PluginRequest) external.PluginResponse {
 	flags.Int("number", 1, "set a number to be added in the scaffolded apiFile.txt")
 	flags.Parse(pr.Args)
 	number, _ := flags.GetInt("number")
+
+	// Update the project config with GVK
+	cfg := PluginConfig{}
+	err := yaml.Unmarshal([]byte(pr.Config), &cfg)
+	if err != nil {
+		return external.PluginResponse{
+			Error: true,
+			ErrorMsgs: []string{
+				err.Error(),
+			},
+		}
+	}
+
+	// Create and append the new config info
+	newResource := ResourceData{
+		Group:   "group",
+		Domain:  "my.domain",
+		Version: "v1",
+		Kind:    "Externalpluginsample",
+	}
+	cfg.Resources = append(cfg.Resources, newResource)
+
+	updatedConfig, err := yaml.Marshal(cfg)
+	if err != nil {
+		return external.PluginResponse{
+			Error: true,
+			ErrorMsgs: []string{
+				err.Error(),
+			},
+		}
+	}
+
+	// Update the PluginResponse with the modified config string
+	pluginResponse.Config = string(updatedConfig)
 
 	apiFile := api.NewApiFile(api.WithNumber(number))
 
