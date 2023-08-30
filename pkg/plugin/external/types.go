@@ -16,7 +16,10 @@ limitations under the License.
 
 package external
 
-import "sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+import (
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+)
 
 // PluginRequest contains all information kubebuilder received from the CLI
 // and plugins executed before it.
@@ -37,7 +40,7 @@ type PluginRequest struct {
 	Universe map[string]string `json:"universe"`
 
 	// Config stores the project configuration file.
-	Config string `json:"config"`
+	Config v3.Cfg `json:"config"`
 }
 
 // PluginResponse is returned to kubebuilder by the plugin and contains all files
@@ -68,7 +71,7 @@ type PluginResponse struct {
 	Flags []Flag `json:"flags,omitempty"`
 
 	// Config stores the project configuration file.
-	Config string `json:"config"`
+	Config v3.Cfg `json:"config"`
 }
 
 // Flag is meant to represent a CLI flag that is used by Kubebuilder to define flags that are parsed

@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
@@ -47,16 +48,21 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	configBytes, err := yaml.Marshal(p.config)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error marshalling config: %v\n", err)
 	}
 
-	fmt.Println("Scaffolding with config:", string(configBytes))
+	var cfg v3.Cfg
+
+	err = yaml.Unmarshal(configBytes, &cfg)
+	if err != nil {
+		return fmt.Errorf("Error unmarshalling config: %v\n", err)
+	}
 
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "init",
 		Args:       p.Args,
-		Config:     string(configBytes),
+		Config:     cfg,
 	}
 
 	err = handlePluginResponse(fs, req, p.Path, p)

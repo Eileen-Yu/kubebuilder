@@ -176,20 +176,23 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 		return fmt.Errorf("error getting current directory: %v", err)
 	}
 
-	// TODO: for debug only, would delete it
-	fmt.Println("This is the received config from plugin response!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", res.Config)
+	// Config before updated
+	cfg := p.GetConfig()
 
-	// update the config
-	if res.Config != "" {
-		updatedConfig := p.GetConfig()
+	// Serialize res.Config to a YAML string
+	resConfigYAML, err := yaml.Marshal(res.Config)
+	if err != nil {
+		return fmt.Errorf("error marshalling res.Config to YAML: %w", err)
+	}
 
-		if err := yaml.Unmarshal([]byte(res.Config), updatedConfig); err != nil {
-			return fmt.Errorf("error unmarshalling the updated config from PluginResponse: %w", err)
-		}
+	// Unmarshal the YAML string into updatedConfig
+	if err := yaml.Unmarshal(resConfigYAML, cfg); err != nil {
+		return fmt.Errorf("error unmarshalling the updated config from PluginResponse: %w", err)
+	}
 
-		if err := p.InjectConfig(updatedConfig); err != nil {
-			return fmt.Errorf("error injecting the updated config from PluginResponse: %w", err)
-		}
+	// Inject the updated config back
+	if err := p.InjectConfig(cfg); err != nil {
+		return fmt.Errorf("error injecting the updated config from PluginResponse: %w", err)
 	}
 
 	for filename, data := range res.Universe {
