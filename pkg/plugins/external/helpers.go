@@ -31,11 +31,9 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
-	"sigs.k8s.io/yaml"
 )
 
 var outputGetter ExecOutputGetter = &execOutputGetter{}
@@ -177,10 +175,21 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 		return fmt.Errorf("error getting current directory: %v", err)
 	}
 
+	s, _ := json.MarshalIndent(&res.Config, "", "  ")
+	fmt.Println("11111111111Before Inject new Config to plugin config")
+	fmt.Println(string(s))
+	fmt.Println("22222222222")
+
 	// Inject the updated config back
 	if err := p.InjectConfig(&res.Config); err != nil {
 		return fmt.Errorf("error injecting the updated config from PluginResponse: %w", err)
 	}
+
+	pc := p.GetConfig()
+	q, _ := json.MarshalIndent(pc, "", "  ")
+	fmt.Println("11111111111After Inject to plugin config")
+	fmt.Println(string(q))
+	fmt.Println("22222222222")
 
 	for filename, data := range res.Universe {
 		path := filepath.Join(currentDir, filename)

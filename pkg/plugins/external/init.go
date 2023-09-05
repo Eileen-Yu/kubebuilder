@@ -17,6 +17,7 @@ limitations under the License.
 package external
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -61,6 +62,11 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err != nil {
 		return err
 	}
+
+	s, _ := json.MarshalIndent(p.config, "", "  ")
+	fmt.Println("11111111111No Problem")
+	fmt.Println(string(s))
+	fmt.Println("22222222222")
 
 	return nil
 }
