@@ -17,6 +17,7 @@ limitations under the License.
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -318,6 +319,13 @@ func (factory *executionHooksFactory) runEFunc() func(*cobra.Command, []string) 
 // and executes the post-scaffold hook.
 func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
+
+		cfg := factory.store.Config()
+		s, _ := json.MarshalIndent(cfg, "", "  ")
+		fmt.Println("11111111111")
+		fmt.Println(string(s))
+		fmt.Println("22222222222")
+
 		if err := factory.store.Save(); err != nil {
 			return fmt.Errorf("%s: unable to save configuration file: %w", factory.errorMessage, err)
 		}

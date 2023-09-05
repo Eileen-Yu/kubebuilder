@@ -17,15 +17,16 @@ limitations under the License.
 package external
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
-	"sigs.k8s.io/yaml"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
@@ -45,24 +46,27 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	configBytes, err := yaml.Marshal(p.config)
-	if err != nil {
-		return err
+	config, ok := p.config.(*v3.Cfg)
+	if !ok {
+		return fmt.Errorf("Error casting config: %v\n", p.config)
 	}
-
-	fmt.Println("Scaffolding with config:", string(configBytes))
 
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "init",
 		Args:       p.Args,
-		Config:     string(configBytes),
+		Config:     *config,
 	}
 
-	err = handlePluginResponse(fs, req, p.Path, p)
+	err := handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
+
+	s, _ := json.MarshalIndent(p.config, "", "  ")
+	fmt.Println("11111111111No Problem")
+	fmt.Println(string(s))
+	fmt.Println("22222222222")
 
 	return nil
 }

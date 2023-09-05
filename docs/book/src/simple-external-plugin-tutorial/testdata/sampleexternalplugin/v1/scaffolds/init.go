@@ -21,7 +21,6 @@ import (
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 	"v1/scaffolds/internal/templates"
@@ -61,17 +60,8 @@ func InitCmd(pr *external.PluginRequest) external.PluginResponse {
 	flags.Parse(pr.Args)
 	domain, _ := flags.GetString("domain")
 
-	// Update the project config with ProjectName
-	cfg := PluginConfig{}
-	err := yaml.Unmarshal([]byte(pr.Config), &cfg)
-	if err != nil {
-		return external.PluginResponse{
-			Error: true,
-			ErrorMsgs: []string{
-				err.Error(),
-			},
-		}
-	}
+	// Update the project config with project name
+	cfg := pr.Config
 
 	// Get current directory as the project name
 	cwd, err := os.Getwd()
@@ -86,20 +76,10 @@ func InitCmd(pr *external.PluginRequest) external.PluginResponse {
 
 	dirName := filepath.Base(cwd)
 
-	cfg.ProjectName = dirName
+	cfg.Name = dirName
 
-	updatedConfig, err := yaml.Marshal(cfg)
-	if err != nil {
-		return external.PluginResponse{
-			Error: true,
-			ErrorMsgs: []string{
-				err.Error(),
-			},
-		}
-	}
-
-	// Update the PluginResponse with the modified config string
-	pluginResponse.Config = string(updatedConfig)
+	// Update the PluginResponse with the modified config
+	pluginResponse.Config = cfg
 
 	initFile := templates.NewInitFile(templates.WithDomain(domain))
 
