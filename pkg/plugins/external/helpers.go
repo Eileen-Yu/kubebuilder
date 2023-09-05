@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
@@ -176,22 +177,8 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 		return fmt.Errorf("error getting current directory: %v", err)
 	}
 
-	// Config before updated
-	cfg := p.GetConfig()
-
-	// Serialize res.Config to a YAML string
-	resConfigYAML, err := yaml.Marshal(res.Config)
-	if err != nil {
-		return fmt.Errorf("error marshalling res.Config to YAML: %w", err)
-	}
-
-	// Unmarshal the YAML string into updatedConfig
-	if err := yaml.Unmarshal(resConfigYAML, cfg); err != nil {
-		return fmt.Errorf("error unmarshalling the updated config from PluginResponse: %w", err)
-	}
-
 	// Inject the updated config back
-	if err := p.InjectConfig(cfg); err != nil {
+	if err := p.InjectConfig(&res.Config); err != nil {
 		return fmt.Errorf("error injecting the updated config from PluginResponse: %w", err)
 	}
 

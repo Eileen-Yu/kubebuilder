@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
-	"sigs.k8s.io/yaml"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
@@ -46,26 +45,19 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	configBytes, err := yaml.Marshal(p.config)
-	if err != nil {
-		return fmt.Errorf("Error marshalling config: %v\n", err)
-	}
-
-	var cfg v3.Cfg
-
-	err = yaml.Unmarshal(configBytes, &cfg)
-	if err != nil {
-		return fmt.Errorf("Error unmarshalling config: %v\n", err)
+	config, ok := p.config.(*v3.Cfg)
+	if !ok {
+		return fmt.Errorf("Error casting config: %v\n", p.config)
 	}
 
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "init",
 		Args:       p.Args,
-		Config:     cfg,
+		Config:     *config,
 	}
 
-	err = handlePluginResponse(fs, req, p.Path, p)
+	err := handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
